@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="author" content="Yasemin Efe">
+<title>Project Portfolio Control Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: control-room ledger. Summary strip, then portfolio register beside a project cockpit, then the CPI/SPI map and method notes. */
+:root{
+  --bg:#f3f5f7; --surface:#ffffff; --ink:#14212e; --muted:#5b6b7a; --line:#d9e0e6;
+  --accent:#0b6e8a; --accent-soft:#e1f0f4;
+  --good:#1f7a4d; --good-soft:#e2f3ea; --warn:#a86a00; --warn-soft:#fbf0d9; --bad:#b3362c; --bad-soft:#f9e3e0;
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif; --body:"Source Sans 3","Segoe UI",Arial,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e161d; --surface:#15212b; --ink:#e4ebf1; --muted:#93a4b3; --line:#26343f;
+  --accent:#4fb3cf; --accent-soft:#16323d;
+  --good:#5cc18d; --good-soft:#15302a; --warn:#e2a93b; --warn-soft:#352a14; --bad:#ef7a6f; --bad-soft:#3a1d1b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e161d; --surface:#15212b; --ink:#e4ebf1; --muted:#93a4b3; --line:#26343f;
+  --accent:#4fb3cf; --accent-soft:#16323d;
+  --good:#5cc18d; --good-soft:#15302a; --warn:#e2a93b; --warn-soft:#352a14; --bad:#ef7a6f; --bad-soft:#3a1d1b; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 48px;display:grid;gap:22px}
+header{display:grid;gap:8px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(26px,4vw,38px);line-height:1.1;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-weight:700;font-size:18px;margin:0}
+.lede{color:var(--muted);max-width:70ch;margin:0}
+.note{font-size:13px;color:var(--muted);border-left:3px solid var(--warn);padding:4px 10px;background:var(--warn-soft);max-width:80ch}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.month{font-family:var(--display);font-weight:700;font-size:18px}
+.month small{display:block;font-family:var(--mono);font-weight:400;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+button{font:inherit;font-weight:600;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 14px;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+button:focus-visible,select:focus-visible,input:focus-visible,tr:focus-visible,circle:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button:disabled{opacity:.45;cursor:default}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.kpi{background:var(--surface);padding:14px 16px;display:grid;gap:2px}
+.kpi span{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.kpi b{font-family:var(--display);font-size:22px;font-variant-numeric:tabular-nums}
+.kpi i{font-style:normal;font-size:13px;color:var(--muted)}
+.neg{color:var(--bad)} .pos{color:var(--good)}
+.main{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:22px;align-items:start}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:12px;min-width:0}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+select,input[type=search]{font:inherit;border:1px solid var(--line);border-radius:8px;padding:6px 10px;background:var(--surface);color:var(--ink);min-width:0}
+.tablebox{overflow:auto;max-height:560px;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+th{position:sticky;top:0;background:var(--surface);text-align:left;font-family:var(--mono);font-weight:500;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:8px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer}
+td{padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td.num,th.num{text-align:right}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--accent-soft)}
+tbody tr.sel{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.pill{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:1px 9px}
+.p-ok{background:var(--good-soft);color:var(--good)} .p-watch{background:var(--warn-soft);color:var(--warn)} .p-act{background:var(--bad-soft);color:var(--bad)}
+.cockpit{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+.meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 14px;font-size:13.5px}
+.meta div span{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.meta div b{font-variant-numeric:tabular-nums}
+.sliders{display:grid;gap:10px;border-top:1px solid var(--line);padding-top:12px}
+.sl{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:13.5px}
+.sl input{grid-column:1/-1;width:100%;accent-color:var(--accent)}
+.sl output{font-family:var(--mono);font-size:13px}
+.check{display:flex;gap:8px;align-items:center;font-size:13.5px}
+.result{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.result div{background:var(--bg);border-radius:8px;padding:8px 10px}
+.result span{display:block;font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.result b{font-family:var(--display);font-size:17px;font-variant-numeric:tabular-nums}
+.advice{background:var(--accent-soft);border-radius:8px;padding:12px 14px;font-size:14px;white-space:pre-line}
+.lower{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:22px;align-items:start}
+svg text{fill:var(--muted);font-family:var(--mono);font-size:11px}
+.formula{font-family:var(--mono);font-size:13px;background:var(--bg);border-radius:8px;padding:10px 12px;line-height:1.7;overflow-x:auto}
+.method p{margin:0;color:var(--muted);font-size:14px;max-width:65ch}
+footer{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+@media (max-width:980px){.main,.lower{grid-template-columns:minmax(0,1fr)}.cockpit{position:static}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi:last-child{grid-column:1/-1}}
+@media (prefers-reduced-motion:no-preference){tbody tr{transition:background .15s}}
+</style>
+<style>body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Project control · R&amp;D portfolio of 80 projects</div>
+  <h1>Project Portfolio Control Simulator</h1>
+  <p class="lede">A working model of the monthly cycle a Project Controller runs: close the month, spot the projects drifting off budget or schedule, test what a decision would cost, and send the project leader a clear note they can act on.</p>
+  <div class="note">All projects, people and figures are fictional sample data. Built by Yasemin Efe as a portfolio piece for a Project Controller application. Not affiliated with or endorsed by any organisation.</div>
+</header>
+
+<div class="bar">
+  <div class="month" id="monthLabel">September 2026<small>Reporting period</small></div>
+  <div class="btns">
+    <button class="primary" id="closeBtn">Close month</button>
+    <button id="resetBtn">Reset to September</button>
+  </div>
+</div>
+
+<section class="kpis" aria-label="Portfolio summary">
+  <div class="kpi"><span>Budget at completion</span><b id="kBac">0</b><i id="kCount">80 projects</i></div>
+  <div class="kpi"><span>Actual cost to date</span><b id="kAc">0</b><i id="kSpent">0% of budget</i></div>
+  <div class="kpi"><span>Forecast at completion</span><b id="kEac">0</b><i>EAC, earned value method</i></div>
+  <div class="kpi"><span>Forecast variance</span><b id="kVar">0</b><i id="kVarPct">0%</i></div>
+  <div class="kpi"><span>Need attention</span><b id="kRisk">0</b><i id="kRiskSplit">0 action · 0 watch</i></div>
+</section>
+
+<div class="main">
+  <section class="panel" aria-label="Project register">
+    <div class="filters">
+      <h2 style="margin-right:auto">Project register</h2>
+      <select id="fDept" aria-label="Department"><option value="">All departments</option><option>CREF</option><option>IS</option><option>Strategic Investments</option></select>
+      <select id="fStatus" aria-label="Status"><option value="">All statuses</option><option value="act">Action needed</option><option value="watch">Watch</option><option value="ok">On track</option></select>
+      <input type="search" id="fText" placeholder="Search project or leader" aria-label="Search">
+    </div>
+    <div class="tablebox">
+      <table>
+        <thead><tr>
+          <th data-k="id">ID</th><th data-k="name">Project</th><th data-k="dept">Dept</th>
+          <th class="num" data-k="bac">Budget</th><th class="num" data-k="pct">Done</th>
+          <th class="num" data-k="cpi">CPI</th><th class="num" data-k="spi">SPI</th>
+          <th class="num" data-k="vac">Variance</th><th data-k="rank">Status</th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <aside class="panel cockpit" aria-label="Project cockpit">
+    <div>
+      <div class="eyebrow" id="cId">P-000</div>
+      <h2 id="cName">Project</h2>
+    </div>
+    <div class="meta" id="cMeta"></div>
+    <div class="sliders">
+      <h2 style="font-size:15px">What if? Test a decision</h2>
+      <div class="sl"><label for="sHours">Extra hours on remaining work</label><output id="oHours">0%</output><input type="range" id="sHours" min="0" max="40" step="5" value="0"></div>
+      <div class="sl"><label for="sRate">Change in hourly rate</label><output id="oRate">0%</output><input type="range" id="sRate" min="-5" max="15" step="1" value="0"></div>
+      <div class="sl"><label for="sDelay">Delay to end date</label><output id="oDelay">0 months</output><input type="range" id="sDelay" min="0" max="6" step="1" value="0"></div>
+      <div class="sl"><label for="sScope">Extra scope requested</label><output id="oScope">€0</output><input type="range" id="sScope" min="0" max="300000" step="10000" value="0"></div>
+      <label class="check"><input type="checkbox" id="sFunded"> Extra scope is covered by a contract amendment</label>
+    </div>
+    <div class="result">
+      <div><span>New forecast</span><b id="rEac">0</b></div>
+      <div><span>Vs budget</span><b id="rVar">0</b></div>
+      <div><span>New end</span><b id="rEnd">-</b></div>
+    </div>
+    <div class="advice" id="advice"></div>
+    <div class="btns"><button id="copyBtn">Copy note for project leader</button></div>
+  </aside>
+</div>
+
+<div class="lower">
+  <section class="panel" aria-label="Cost and schedule map">
+    <h2>Cost and schedule map</h2>
+    <p class="method" style="margin:0"><span style="color:var(--muted);font-size:14px">Each dot is a project. Bottom left means over budget and behind schedule. Tap a dot to open it.</span></p>
+    <div style="overflow-x:auto"><svg id="map" viewBox="0 0 520 380" width="100%" role="img" aria-label="Scatter of cost performance against schedule performance"></svg></div>
+  </section>
+  <section class="panel method" aria-label="Method">
+    <h2>How the numbers work</h2>
+    <p>Each month the model updates actual cost and progress for every project, then applies standard earned value rules.</p>
+    <div class="formula">EV  = Budget × % complete<br>CPI = EV ÷ Actual cost<br>SPI = EV ÷ Planned value<br>EAC = Actual + (Budget − EV) ÷ CPI<br>Variance = Budget − EAC</div>
+    <p><b>Status rules.</b> Action needed when CPI is below 0.90 or the forecast overrun is above 10%. Watch when CPI is below 0.97 or SPI below 0.90. Otherwise on track.</p>
+    <p><b>Why it matters.</b> Spotting a low CPI in month three gives a project leader time to replan. Spotting it at the final invoice does not.</p>
+  </section>
+</div>
+
+<footer>Built by Yasemin Efe · MSc Finance &amp; Investments, Rotterdam School of Management · efe_yasemin@yahoo.com · Sample data only.</footer>
+</div>
+
+<script>
+(function(){
+const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const START_MONTH=9;
+function rng(seed){let s=seed>>>0;return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296}}
+const themes=["Hydrogen storage","Battery recycling","Quantum sensing","Digital twin","Offshore wind materials","Cybersecurity testbed","Smart mobility","Circular plastics","6G antenna","Plant protein","Water purification","Geothermal heat","Climate adaptation","Drone inspection","Medical imaging","Chip packaging","Carbon capture","Grid flexibility","Soil monitoring","Building retrofit"];
+const types=["pilot","lab upgrade","field trial","feasibility study","prototype","data platform","test facility","scale-up"];
+const firsts=["Anouk","Pieter","Sanne","Jeroen","Fatima","Lars","Noor","Bram","Eva","Mehmet","Lotte","Ruben","Iris","Daan","Mila","Thijs"];
+const lasts=["de Vries","Jansen","Bakker","Visser","Smit","Meijer","de Boer","Mulder","Bos","Vos","Peters","Hendriks"];
+const depts=["CREF","IS","Strategic Investments"];
+let projects=[],month=START_MONTH;
+
+function build(){
+  const r=rng(20261026);projects=[];
+  for(let i=0;i<80;i++){
+    const dur=6+Math.floor(r()*24), start=1+Math.floor(r()*12)-Math.floor(r()*12);
+    const bac=Math.round((80+r()*r()*1900)/5)*5000;
+    const base=r();
+    projects.push({id:"P-"+String(101+i).padStart(3,"0"),
+      name:themes[Math.floor(r()*themes.length)]+" "+types[Math.floor(r()*types.length)],
+      dept:depts[Math.floor(r()*3)], lead:firsts[Math.floor(r()*firsts.length)]+" "+lasts[Math.floor(r()*lasts.length)],
+      bac, start, dur,
+      cf: base<0.18?0.78+r()*0.1:base<0.35?0.9+r()*0.06:0.97+r()*0.1,
+      sf: r()<0.25?0.75+r()*0.13:0.92+r()*0.14,
+      drift:(r()-0.5)*0.03, seed:Math.floor(r()*1e9)});
+  }
+  month=START_MONTH;
+}
+function calc(p){
+  const elapsed=Math.max(0,month-p.start+1);
+  const plannedPct=Math.min(1,elapsed/p.dur);
+  const steps=month-START_MONTH, cpi=Math.max(0.6,Math.min(1.25,p.cf+p.drift*steps)), spiF=Math.max(0.55,Math.min(1.2,p.sf+p.drift*0.7*steps));
+  let pct=Math.min(1,plannedPct*spiF); if(plannedPct===0)pct=0;
+  const pv=p.bac*plannedPct, ev=p.bac*pct, ac=pct>0?ev/cpi:0;
+  const eac=pct>0?ac+(p.bac-ev)/cpi:p.bac;
+  const spi=pv>0?ev/pv:1, cpiOut=ac>0?ev/ac:1;
+  const vac=p.bac-eac, vpct=-vac/p.bac;
+  let st="ok"; if(cpiOut<0.9||vpct>0.10)st="act"; else if(cpiOut<0.97||spi<0.9)st="watch";
+  if(pct===0)st="ok";
+  return Object.assign(p,{pv,ev,ac,eac,cpi:cpiOut,spi,vac,pct,st,rank:{act:0,watch:1,ok:2}[st],endM:p.start+p.dur-1});
+}
+const eur=v=>{const a=Math.abs(v);const s=a>=1e6?"€"+(a/1e6).toFixed(2)+"m":"€"+Math.round(a/1000)+"k";return v<0?"−"+s:s};
+const monthName=m=>{const y=2026+Math.floor((m-1)/12);return MONTHS[((m-1)%12+12)%12]+" "+y};
+let sortK="rank",sortDir=1,selId=null;
+
+function render(){
+  projects.forEach(calc);
+  document.getElementById("monthLabel").innerHTML=monthName(month)+"<small>Reporting period</small>";
+  document.getElementById("closeBtn").disabled=month>=12;
+  const t=projects.reduce((a,p)=>(a.bac+=p.bac,a.ac+=p.ac,a.eac+=p.eac,a),{bac:0,ac:0,eac:0});
+  const act=projects.filter(p=>p.st==="act").length, watch=projects.filter(p=>p.st==="watch").length;
+  kBac.textContent=eur(t.bac);kAc.textContent=eur(t.ac);kSpent.textContent=Math.round(t.ac/t.bac*100)+"% of budget";
+  kEac.textContent=eur(t.eac);const v=t.bac-t.eac;kVar.textContent=eur(v);kVar.className=v<0?"neg":"pos";
+  kVarPct.textContent=(v<0?"overrun ":"underrun ")+Math.abs(v/t.bac*100).toFixed(1)+"%";
+  kRisk.textContent=act+watch;kRiskSplit.textContent=act+" action · "+watch+" watch";
+  const d=fDept.value,s=fStatus.value,q=fText.value.toLowerCase();
+  const list=projects.filter(p=>(!d||p.dept===d)&&(!s||p.st===s)&&(!q||(p.name+" "+p.lead+" "+p.id).toLowerCase().includes(q)))
+    .sort((a,b)=>{const x=a[sortK],y=b[sortK];return (x>y?1:x<y?-1:(a.vac-b.vac))*sortDir});
+  const lbl={ok:["On track","p-ok"],watch:["Watch","p-watch"],act:["Action","p-act"]};
+  rows.innerHTML=list.map(p=>`<tr tabindex="0" data-id="${p.id}" class="${p.id===selId?"sel":""}"><td>${p.id}</td><td>${p.name}</td><td>${p.dept==="Strategic Investments"?"SI":p.dept}</td><td class="num">${eur(p.bac)}</td><td class="num">${Math.round(p.pct*100)}%</td><td class="num">${p.pct?p.cpi.toFixed(2):"-"}</td><td class="num">${p.pct?p.spi.toFixed(2):"-"}</td><td class="num ${p.vac<0?"neg":""}">${eur(p.vac)}</td><td><span class="pill ${lbl[p.st][1]}">${lbl[p.st][0]}</span></td></tr>`).join("")||`<tr><td colspan="9" style="color:var(--muted)">No projects match these filters.</td></tr>`;
+  if(!selId||!projects.find(p=>p.id===selId)){const w=[...projects].sort((a,b)=>a.vac-b.vac)[0];selId=w.id}
+  drawMap();cockpit();
+}
+function cockpit(){
+  const p=projects.find(x=>x.id===selId);
+  cId.textContent=p.id+" · "+p.dept;cName.textContent=p.name;
+  cMeta.innerHTML=[["Project leader",p.lead],["Runs",monthName(p.start)+" to "+monthName(p.endM)],["Budget",eur(p.bac)],["Actual to date",eur(p.ac)],["Earned value",eur(p.ev)],["Planned value",eur(p.pv)],["CPI / SPI",p.pct?p.cpi.toFixed(2)+" / "+p.spi.toFixed(2):"Not started"],["Forecast now",eur(p.eac)]]
+    .map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join("");
+  const h=+sHours.value/100,r=+sRate.value/100,dl=+sDelay.value,sc=+sScope.value,fund=sFunded.checked;
+  oHours.textContent="+"+sHours.value+"%";oRate.textContent=(r>0?"+":"")+sRate.value+"%";oDelay.textContent=dl+(dl===1?" month":" months");oScope.textContent=eur(sc);
+  const remaining=(p.bac-p.ev)/p.cpi, burn=p.bac/p.dur;
+  const eac=p.ac+remaining*(1+h)*(1+r)+dl*burn*0.25+sc, budget=p.bac+(fund?sc:0), vac=budget-eac;
+  rEac.textContent=eur(eac);rVar.textContent=eur(vac);rVar.className=vac<0?"neg":"pos";rEnd.textContent=monthName(p.endM+dl).replace(" 20"," '");
+  const overPct=-vac/budget*100;
+  let lines=[`${p.id} ${p.name}, status ${monthName(month)}`];
+  if(!p.pct){lines.push("The project has not started yet, so there are no actuals to assess. I will set up the baseline and check the first month's figures with you.")}
+  else{
+    lines.push(`We have spent ${eur(p.ac)} and delivered ${Math.round(p.pct*100)}% of the work. For every euro spent we are earning back ${p.cpi.toFixed(2)} of planned value${p.spi<0.95?`, and progress is at ${Math.round(p.spi*100)}% of plan`:""}.`);
+    lines.push(vac<0?`With the assumptions above, the forecast lands at ${eur(eac)}, which is ${eur(-vac)} (${overPct.toFixed(1)}%) over budget.`:`With the assumptions above, the forecast lands at ${eur(eac)}, leaving ${eur(vac)} of headroom.`);
+    const acts=[];
+    if(p.cpi<0.9)acts.push("review the hours booked on the main work packages with me this week");
+    if(p.spi<0.9||dl>0)acts.push("agree a realistic end date and check if the delay affects any subsidy or client milestones");
+    if(sc>0&&!fund)acts.push("hold the extra scope until it is covered by a contract amendment or change request");
+    if(r>0)acts.push("check whether the rate increase can be passed on under the contract");
+    if(!acts.length)acts.push("keep the current plan and we will check again at the next month end");
+    lines.push("Suggested next step: "+acts.join("; ")+".");
+  }
+  advice.textContent=lines.join("\n\n");
+}
+function drawMap(){
+  const W=520,H=380,L=52,R=16,T=16,B=44,min=0.6,max=1.25;
+  const sx=v=>L+(Math.min(max,Math.max(min,v))-min)/(max-min)*(W-L-R), sy=v=>H-B-(Math.min(max,Math.max(min,v))-min)/(max-min)*(H-T-B);
+  let g="";
+  [0.6,0.7,0.8,0.9,1.0,1.1,1.2].forEach(v=>{g+=`<line x1="${sx(v)}" y1="${T}" x2="${sx(v)}" y2="${H-B}" stroke="var(--line)"/><line x1="${L}" y1="${sy(v)}" x2="${W-R}" y2="${sy(v)}" stroke="var(--line)"/><text x="${sx(v)}" y="${H-B+16}" text-anchor="middle">${v.toFixed(1)}</text><text x="${L-8}" y="${sy(v)+4}" text-anchor="end">${v.toFixed(1)}</text>`});
+  g+=`<rect x="${L}" y="${sy(1)}" width="${sx(1)-L}" height="${H-B-sy(1)}" fill="var(--bad-soft)" opacity=".6"/>`;
+  g+=`<line x1="${sx(1)}" y1="${T}" x2="${sx(1)}" y2="${H-B}" stroke="var(--muted)" stroke-dasharray="4 3"/><line x1="${L}" y1="${sy(1)}" x2="${W-R}" y2="${sy(1)}" stroke="var(--muted)" stroke-dasharray="4 3"/>`;
+  g+=`<text x="${(L+W-R)/2}" y="${H-6}" text-anchor="middle">SPI · schedule performance</text><text transform="translate(14 ${(T+H-B)/2}) rotate(-90)" text-anchor="middle">CPI · cost performance</text>`;
+  const col={ok:"var(--good)",watch:"var(--warn)",act:"var(--bad)"};
+  projects.filter(p=>p.pct>0).forEach(p=>{const sel=p.id===selId;g+=`<circle tabindex="0" data-id="${p.id}" cx="${sx(p.spi).toFixed(1)}" cy="${sy(p.cpi).toFixed(1)}" r="${sel?8:5}" fill="${col[p.st]}" fill-opacity="${sel?1:.75}" stroke="${sel?"var(--ink)":"var(--surface)"}" stroke-width="${sel?2:1}" style="cursor:pointer"><title>${p.id} ${p.name}</title></circle>`});
+  map.innerHTML=g;
+}
+function select(id){if(!id)return;selId=id;["sHours","sRate","sDelay","sScope"].forEach(k=>document.getElementById(k).value=0);sFunded.checked=false;render()}
+rows.addEventListener("click",e=>{const tr=e.target.closest("tr[data-id]");if(tr)select(tr.dataset.id)});
+rows.addEventListener("keydown",e=>{if(e.key==="Enter"){const tr=e.target.closest("tr[data-id]");if(tr)select(tr.dataset.id)}});
+map.addEventListener("click",e=>{const c=e.target.closest("circle");if(c)select(c.dataset.id)});
+map.addEventListener("keydown",e=>{if(e.key==="Enter"){const c=e.target.closest("circle");if(c)select(c.dataset.id)}});
+document.querySelectorAll("th[data-k]").forEach(th=>th.addEventListener("click",()=>{const k=th.dataset.k;sortDir=sortK===k?-sortDir:1;sortK=k;render()}));
+[fDept,fStatus].forEach(el=>el.addEventListener("change",render));fText.addEventListener("input",render);
+["sHours","sRate","sDelay","sScope","sFunded"].forEach(k=>document.getElementById(k).addEventListener("input",cockpit));
+closeBtn.addEventListener("click",()=>{if(month<12){month++;render()}});
+resetBtn.addEventListener("click",()=>{build();selId=null;render()});
+copyBtn.addEventListener("click",()=>{const t=advice.textContent;const done=()=>{copyBtn.textContent="Copied";setTimeout(()=>copyBtn.textContent="Copy note for project leader",1500)};
+  try{navigator.clipboard.writeText(t).then(done,()=>{const s=getSelection(),rg=document.createRange();rg.selectNodeContents(advice);s.removeAllRanges();s.addRange(rg);copyBtn.textContent="Text selected, press copy"})}catch(e){}});
+build();render();
+})();
+</script>
+
+</body>
+</html>
